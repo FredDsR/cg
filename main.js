@@ -115,9 +115,19 @@ function main() {
     return matrix;
   }
 
+  let then = 0;
+  let deltatime;
+  let translationSpeed = 10;
+  let rotationSpeed = 5;
+//  let animate = 1;
+  //let animatationDuration = 5;
+  let timeTracker = 0;
+
   const state = {
     shouldAnimate: false,
-    translationX: 0,
+    shouldAnimateCamera: false,
+    animationDuration: 5,
+    cameraAnimationDuration: 10,
   };
 
   const object1 = {
@@ -130,10 +140,6 @@ function main() {
     scaleX: 1,
     scaleY: 1,
     scaleZ: 1,
-    animationDuration: 5,
-    translationSpeed: 10,
-    rotationSpeed: 5,
-    timeTracker: 0,
   };
 
   const object2 = {
@@ -146,15 +152,13 @@ function main() {
     scaleX: 1,
     scaleY: 1,
     scaleZ: 1,
-    animationDuration: 5,
-    translationSpeed: 10,
-    rotationSpeed: 5,
-    timeTracker: 0,
   };
 
   const gui = new dat.GUI();
   gui.add(state, "shouldAnimate")
-  //gui.add(state, "animationDuration", 0, 10, 1);
+  gui.add(state, "shouldAnimateCamera")
+  gui.add(state, "animationDuration", 0, 10, 1);
+  gui.add(state, "cameraAnimationDuration", 0, 10, 1);
 
   const object1Folder = gui.addFolder("Object 1");
   object1Folder.add(object1, "translationX", -50, 50, 1);
@@ -166,7 +170,6 @@ function main() {
   object1Folder.add(object1, "scaleX", 1, 50, 1);
   object1Folder.add(object1, "scaleY", 1, 50, 1);
   object1Folder.add(object1, "scaleZ", 1, 50, 1);
-  object1Folder.add(object1, "animationDuration", 0, 10, 1);
 
   const object2Folder = gui.addFolder("Object 2");
   object2Folder.add(object2, "translationX", -50, 50, 1);
@@ -178,14 +181,13 @@ function main() {
   object2Folder.add(object2, "scaleX", 1, 50, 1);
   object2Folder.add(object2, "scaleY", 1, 50, 1);
   object2Folder.add(object2, "scaleZ", 1, 50, 1);
-  object2Folder.add(object2, "animationDuration", 0, 10, 1);
 
-
-  let then = 0;
-  let deltatime;
-//  let animate = 1;
-  //let animatationDuration = 5;
-
+  const points = [
+    [-100, -100, 0],
+    [-100, 100, 0],
+    [100, 100, 0],
+    [100, -100, 0],
+  ]
 
   function drawScene(now) {
     now *= 0.001;
@@ -193,20 +195,15 @@ function main() {
     then = now;
 
     if (state.shouldAnimate) {
-      if (now - object1.timeTracker > object1.animationDuration) {
-        object1.translationSpeed *= -1;
-        object1.timeTracker = now;
+      if (now - timeTracker > state.animationDuration) {
+        translationSpeed *= -1;
+        timeTracker = now;
       }
 
-      if (now - object2.timeTracker > object2.animationDuration) {
-        object2.translationSpeed *= -1;
-        object2.timeTracker = now;
-      }
-
-      object1.translationX += (object1.translationSpeed * deltatime);
-      object1.rotationX += (object1.rotationSpeed * deltatime);
-      object2.translationY += (object2.translationSpeed * deltatime);
-      object2.rotationY += (object2.rotationSpeed * deltatime);
+      object1.translationX += (translationSpeed * deltatime);
+      object1.rotationX += (rotationSpeed * deltatime);
+      object2.translationY += (translationSpeed * deltatime);
+      object2.rotationY += (rotationSpeed * deltatime);
     }
 
     twgl.resizeCanvasToDisplaySize(gl.canvas);
@@ -223,9 +220,19 @@ function main() {
     const projectionMatrix =
         m4.perspective(fieldOfViewRadians, aspect, 1, 2000);
 
-    const cameraPosition = [0, 0, 100];
-    const target = [0, 0, 0];
-    const up = [0, 1, 0];
+    
+    let cameraPosition = points[0];
+    let target = [0, 0, 0];
+    let up = [0, 1, 0];
+
+    let point = points[1];
+    if (state.shouldAnimateCamera) {
+        if (cameraPosition !== point) {
+          cameraPosition[0] += ((200 * deltatime) / 10);
+          console.log(cameraPosition)
+        }
+    }
+   
     const cameraMatrix = m4.lookAt(cameraPosition, target, up);
 
     const viewMatrix = m4.inverse(cameraMatrix);
