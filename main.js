@@ -182,12 +182,27 @@ function main() {
   object2Folder.add(object2, "scaleY", 1, 50, 1);
   object2Folder.add(object2, "scaleZ", 1, 50, 1);
 
-  const points = [
+  // Camera params
+  const cameraPoints = [
     [-100, -100, 0],
     [-100, 100, 0],
     [100, 100, 0],
     [100, -100, 0],
-  ]
+  ];
+  let cameraIdx = 0;
+  let nextCameraIdx = cameraIdx + 1;
+  let cameraPosition = [-100, -100, 0];
+  const target = [0, 0, 0];
+  const up = [0, 1, 0];
+  let cameraPointsDistance = 200;  
+
+  function roundCoord(a) {
+    return [parseInt(a[0]), parseInt(a[1]), parseInt(a[2])]
+  }
+
+  function coordIsEqual(a, b) {
+    return a[0] == b[0] && a[1] == b[1] && a[2] == b[2]
+  }
 
   function drawScene(now) {
     now *= 0.001;
@@ -220,28 +235,32 @@ function main() {
     const projectionMatrix =
         m4.perspective(fieldOfViewRadians, aspect, 1, 2000);
 
-    
-    let cameraPosition = points[0];
-    let target = [0, 0, 0];
-    let up = [0, 1, 0];
-
-    let point = points[1];
     if (state.shouldAnimateCamera) {
-        if (cameraPosition !== point) {
-          cameraPosition[0] += ((200 * deltatime) / 10);
-          console.log(cameraPosition)
+      let cameraDeslocation = (cameraPointsDistance * deltatime) / state.cameraAnimationDuration;
+      if (!coordIsEqual(roundCoord(cameraPosition), cameraPoints[nextCameraIdx])) {
+        if (cameraIdx == 0) {
+          cameraPosition[1] < cameraPoints[nextCameraIdx][1] ? cameraPosition[1] += cameraDeslocation : cameraPosition[1] = cameraPoints[nextCameraIdx][1];
+        } else if (cameraIdx == 1) {
+          cameraPosition[0] < cameraPoints[nextCameraIdx][0] ? cameraPosition[0] += cameraDeslocation : cameraPosition[0] = cameraPoints[nextCameraIdx][0];
+        } else if (cameraIdx == 2) {
+          cameraPosition[1] > cameraPoints[nextCameraIdx][1] ? cameraPosition[1] -= cameraDeslocation : cameraPosition[1] = cameraPoints[nextCameraIdx][1];
+        } else if (cameraIdx == 3) {
+          cameraPosition[0] > cameraPoints[nextCameraIdx][0] ? cameraPosition[0] -= cameraDeslocation : cameraPosition[0] = cameraPoints[nextCameraIdx][0];
         }
+      } else {
+        cameraIdx = nextCameraIdx;
+        cameraIdx == 3 ? nextCameraIdx = 0 : nextCameraIdx += 1;
+      }
+      console.log(cameraPoints[cameraIdx], roundCoord(cameraPosition), cameraPoints[nextCameraIdx])
+      console.log(cameraIdx, nextCameraIdx, cameraDeslocation)
     }
    
+
     const cameraMatrix = m4.lookAt(cameraPosition, target, up);
 
     const viewMatrix = m4.inverse(cameraMatrix);
 
     const viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
-
-    //objects.forEach(function(object) {
-     
-    //});
 
     objects[0].uniforms.u_matrix = computeMatrix(
       viewProjectionMatrix,
